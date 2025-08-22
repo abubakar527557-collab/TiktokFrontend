@@ -5,50 +5,60 @@ import { useNavigate } from 'react-router-dom';
 function UploadForm({ onUpload }) {
   const [mediaData, setMediaData] = useState({
     title: '',
-    caption: '',
-    location: '',
-    people: '',
+    publisher: '',
+    producer: '',
+    genre: '',
+    ageRating: 'PG',
     media: null,
-    type: 'image',
+    type: 'video'
   });
-  
+
   const navigate = useNavigate();
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
     if (name === 'media' && files.length > 0) {
       const file = files[0];
-      const type = file.type.startsWith('video') ? 'video' : 'image';
-      setMediaData({ ...mediaData, media: file, type });
+      // Only accept video files
+      if (!file.type.startsWith('video/')) {
+        alert('Please upload only video files');
+        return;
+      }
+      setMediaData({ ...mediaData, media: file, type: 'video' });
     } else {
       setMediaData({ ...mediaData, [name]: value });
     }
   };
-  
-  // Add async here to use await
+
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    const formData = new FormData();
-    formData.append('title', mediaData.title);
-    formData.append('caption', mediaData.caption);
-    formData.append('location', mediaData.location);
-    formData.append('people', mediaData.people);
-    formData.append('media', mediaData.media);
-    
-    try {
-      await onUpload(formData);
-      navigate('/');
-    } catch (error) {
-      console.error('Upload error:', error);
-      // You might want to add user feedback here, like:
-      // alert('Upload failed. Please try again.');
+  e.preventDefault();
+  const formData = new FormData();
+  // Append all fields
+  formData.append('title', mediaData.title);
+  formData.append('publisher', mediaData.publisher);
+  formData.append('producer', mediaData.producer);
+  formData.append('genre', mediaData.genre);
+  formData.append('ageRating', mediaData.ageRating);
+  formData.append('media', mediaData.media);
+
+  try {
+    const response = await onUpload(formData);
+    console.log('Upload response:', response.data); // Debug the response
+    if (response.data && response.data.mediaUrl) {
+      navigate('/'); // Redirect to home on success
+    } else {
+      throw new Error('No media URL returned');
     }
-  };
+  } catch (error) {
+    console.error('Upload error:', error);
+    alert(`Upload failed: ${error.message}`);
+  }
+};
 
   return (
     <Container className="mt-5 d-flex justify-content-center">
       <div className="upload-box p-4 rounded">
-        <h2 className="form-heading mb-4 text-center">Upload Media</h2>
+        <h2 className="form-heading mb-4 text-center">Upload Video</h2>
         <Form onSubmit={handleSubmit}>
           <Form.Group className="mb-3">
             <Form.Control
@@ -56,50 +66,73 @@ function UploadForm({ onUpload }) {
               placeholder="Title"
               name="title"
               onChange={handleChange}
-              className="form-input"
               required
             />
           </Form.Group>
+
           <Form.Group className="mb-3">
             <Form.Control
               type="text"
-              placeholder="Caption"
-              name="caption"
+              placeholder="Publisher"
+              name="publisher"
               onChange={handleChange}
-              className="form-input"
+              required
             />
           </Form.Group>
+
           <Form.Group className="mb-3">
             <Form.Control
               type="text"
-              placeholder="Location"
-              name="location"
+              placeholder="Producer"
+              name="producer"
               onChange={handleChange}
-              className="form-input"
+              required
             />
           </Form.Group>
+
           <Form.Group className="mb-3">
-            <Form.Control
-              type="text"
-              placeholder="People (comma separated)"
-              name="people"
+            <Form.Select 
+              name="genre" 
               onChange={handleChange}
-              className="form-input"
-            />
+              required
+            >
+              <option value="">Select Genre</option>
+              <option value="Music">Music</option>
+              <option value="Comedy">Comedy</option>
+              <option value="Education">Education</option>
+              <option value="Gaming">Gaming</option>
+              <option value="Other">Other</option>
+            </Form.Select>
           </Form.Group>
+
+          <Form.Group className="mb-3">
+            <Form.Select 
+              name="ageRating" 
+              onChange={handleChange}
+              required
+            >
+              <option value="PG">PG</option>
+              <option value="G">G</option>
+              <option value="PG-13">PG-13</option>
+              <option value="R">R</option>
+              <option value="NC-17">NC-17</option>
+            </Form.Select>
+          </Form.Group>
+
           <Form.Group className="mb-3">
             <Form.Control
               type="file"
               name="media"
               onChange={handleChange}
-              accept="image/*,video/*"
-              className="form-input"
+              accept="video/*"
               required
             />
+            <Form.Text>Only video files accepted (MP4, MOV, etc.)</Form.Text>
           </Form.Group>
+
           <div className="text-center">
-            <Button variant="danger" type="submit" className="rounded-pill px-4">
-              Upload
+            <Button variant="primary" type="submit">
+              Upload Video
             </Button>
           </div>
         </Form>

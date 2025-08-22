@@ -1,49 +1,71 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, Form, Button, ListGroup, Alert } from 'react-bootstrap';
 import { postComment, addRating, getComments } from '../api';
 
-const VideoCard = ({ media, onDelete,isCreator }) => {
+const VideoCard = ({ media, onDelete, isCreator }) => {
   const [comment, setComment] = useState('');
   const [comments, setComments] = useState([]);
   const [rating, setRating] = useState(0);
-  const [averageRating, setAverageRating] = useState(media.averageRating || 0);
+  const [averageRating, setAverageRating] = useState(media?.averageRating || 0);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [hoverRating, setHoverRating] = useState(0);
+  const videoRef = useRef(null);
 
+  // Get file extension for video type
+  const getVideoType = (url) => {
+    if (!url) return 'mp4';
+    const extension = url.split('.').pop()?.split('?')[0];
+    return extension || 'mp4';
+  };
 
   useEffect(() => {
     const fetchComments = async () => {
       try {
-        const response = await getComments(media._id);
-        setComments(response.data);
+        if (media?._id) {
+          const response = await getComments(media._id);
+          setComments(Array.isArray(response?.data) ? response.data : []);
+        }
       } catch (err) {
         console.error("Error fetching comments:", err);
+        setComments([]);
       }
     };
     fetchComments();
-  }, [media._id]);
+  }, [media?._id]);
 
-  const handleCommentSubmit = async (e) => {
+useEffect(() => {
+  console.log('Current comments:', comments);
+}, [comments]);
+
+ const handleCommentSubmit = async (e) => {
     e.preventDefault();
     if (!comment.trim()) return;
+    
     setError(null);
     try {
-      const response = await postComment(media._id, comment);
-      setComments([...comments, response.data]);
-      setComment('');
-      setSuccess('Comment posted successfully!');
-      setTimeout(() => setSuccess(null), 3000);
+    const newCommentResponse = await postComment(media._id, comment);
+const newComment = newCommentResponse.comment || newCommentResponse;
+
+if (newComment && newComment.userId) {
+  setComments(prev => [...(prev || []), newComment]);
+  setComment('');
+  setSuccess('Comment posted successfully!');
+} else {
+  throw new Error('Invalid comment response structure');
+}
     } catch (error) {
-      setError(error.response?.data?.message || 'Failed to post comment');
+      console.error('Comment submission error:', error);
+      setError(error.response?.data?.message || error.message || 'Failed to post comment');
+    } finally {
+      setTimeout(() => setSuccess(null), 3000);
     }
   };
-
 
   const handleRatingSubmit = async () => {
     try {
       const response = await addRating(media._id, rating);
-      setAverageRating(response.data.averageRating);
+      setAverageRating(response.data?.averageRating || 0);
       setSuccess('Rating submitted!');
       setTimeout(() => setSuccess(null), 3000);
     } catch (error) {
@@ -51,114 +73,112 @@ const VideoCard = ({ media, onDelete,isCreator }) => {
     }
   };
 
-  // In your VideoCard component
-const renderMedia = () => {
-  if (!media?.mediaUrl) return <p>No media available</p>;
+  const handlePlay = () => {
+    if (videoRef.current) {
+      videoRef.current.play().catch(e => console.log("Autoplay prevented:", e));
+    }
+  };
 
-  // Make sure URL is properly formatted
-  const mediaUrl = media.mediaUrl.startsWith('http') 
-    ? media.mediaUrl 
-    : `https://instagram-clone-backend.azurewebsites.net${media.mediaUrl}`;
+  // Format media URL properly
+  const formatMediaUrl = (url) => {
+    if (!url) return '';
+    if (url.startsWith('http')) return url;
+    
+    // Clean the URL path
+    const cleanUrl = url
+      .replace(/^undefined/, '')
+      .replace(/\/+/g, '/')
+      .replace(/^\//, '');
+      
+    return `http://localhost:5000/${cleanUrl}`;
+  };
 
-  if (media.mediaType === 'video') {
-    return (
-      <video controls style={{ width: '100%' }}>
-        <source src={mediaUrl} type={`video/${mediaUrl.split('.').pop()}`} />
-        Your browser does not support the video tag.
-      </video>
-    );
-  } else {
-    return (
-      <img
-        src={mediaUrl}
-        alt={media.title || 'uploaded media'}
-        style={{ width: '100%' }}
-        onError={(e) => {
-          e.target.onerror = null; 
-          e.target.src = '/placeholder.jpg'; // Fallback image
-        }}
-      />
-    );
-  }
-};
+  // Display comment author name
+  const displayCommentAuthor = (comment) => {
+    // Handle both populated user object and user reference
+    if (comment.userId && typeof comment.userId === 'object') {
+      return comment.userId.username || 'Anonymous';
+    }
+    return 'Anonymous';
+  };
+  // Safely handle media data with defaults
+  const safeMedia = {
+    title: media?.title || 'Untitled Video',
+    publisher: media?.publisher || 'Unknown Publisher',
+    producer: media?.producer || 'Unknown Producer',
+    genre: media?.genre || 'Other',
+    ageRating: media?.ageRating || 'Not Rated',
+    mediaUrl: media?.mediaUrl || '',
+    thumbnailUrl: media?.thumbnailUrl || '',
+    people: media?.people || []
+  };
 
-// const handleDelete = async () => {
-//   if (window.confirm('Are you sure you want to delete this post?')) {
-//     try {
-//       await onDelete(media._id);
-//       setSuccess('Post deleted successfully!');
-//       setTimeout(() => setSuccess(null), 3000);
-//     } catch (error) {
-//       setError(error.response?.data?.message || 'Failed to delete post');
-//     }
-//   }
-// };
-
+  // Debugging logs
+  console.log('Media object:', media);
+  console.log('Final video URL:', formatMediaUrl(safeMedia.mediaUrl));
 
   return (
-    <Card className="video-card" style={{ marginBottom: '1rem' }}>
-    {/* {isCreator && (
-        <button
-          onClick={handleDelete}
-          className="delete-btn"
-          aria-label="Delete post"
-          style={{
-            position: 'absolute',
-            top: '10px',
-            right: '10px',
-            background: 'rgba(255, 0, 0, 0.7)',
-            color: 'white',
-            border: 'none',
-            borderRadius: '50%',
-            width: '30px',
-            height: '30px',
-            fontSize: '20px',
-            cursor: 'pointer',
-            zIndex: 1,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'all 0.2s',
-            ':hover': {
-              background: 'rgba(255, 0, 0, 1)',
-              transform: 'scale(1.1)'
-            }
+    <Card className="video-card mb-4">
+      <div className="video-container">
+        <video
+          ref={videoRef}
+          controls
+          playsInline
+          preload="metadata"
+          onClick={handlePlay}
+          onError={(e) => {
+            console.error('Video error:', {
+              error: e.target.error,
+              src: formatMediaUrl(media?.mediaUrl),
+              mediaObj: media
+            });
           }}
+          style={{ width: '100%', maxHeight: '500px', backgroundColor: '#000' }}
         >
-          ×
-        </button>
-      )} */}
-
-
-      <div className="media-container">{renderMedia()}</div>
+          <source 
+            src={formatMediaUrl(media?.mediaUrl)} 
+            type={`video/${getVideoType(media?.mediaUrl)}`}
+          />
+          Your browser does not support the video tag.
+        </video>
+      </div>
+      
       <Card.Body>
-        <Card.Title>{media.title || 'Untitled Post'}</Card.Title>
-        <Card.Text>{media.caption}</Card.Text>
-        <Card.Text>
-          <small>Location: {media.location || 'Not specified'}</small>
-        </Card.Text>
-        <Card.Text>
-          <small>People: {media.people?.join(', ') || 'Not specified'}</small>
+        <Card.Title>{safeMedia.title}</Card.Title>
+        <Card.Text className="text-muted">
+          <small>Publisher: {safeMedia.publisher}</small><br />
+          <small>Producer: {safeMedia.producer}</small><br />
+          <small>Genre: {safeMedia.genre}</small><br />
+          <small>Rating: {safeMedia.ageRating}</small>
         </Card.Text>
 
-        {error && <Alert variant="danger" dismissible>{error}</Alert>}
-        {success && <Alert variant="success" dismissible>{success}</Alert>}
+        {error && (
+          <Alert variant="danger" onClose={() => setError(null)} dismissible>
+            {error}
+          </Alert>
+        )}
 
-        {/* Comments Section (Now First) */}
-        <div className="comments-section">
-          <h6>Comments</h6>
+        {success && (
+          <Alert variant="success" onClose={() => setSuccess(null)} dismissible>
+            {success}
+          </Alert>
+        )}
+
+        <div className="comments-section mt-3">
+          <h6>Comments ({comments.length})</h6>
           {comments.length === 0 ? (
             <p>No comments yet</p>
           ) : (
-            <ListGroup>
+            <ListGroup className="mb-3">
               {comments.map((c, i) => (
-                <ListGroup.Item key={i} style={{ borderRadius: '0' }}> {/* Rectangular */}
-                  <strong>{c.userId?.username || 'Anonymous'}: </strong>
+                <ListGroup.Item key={i}>
+                  {/* <strong>{displayCommentAuthor(c)}: </strong> */}
                   {c.text}
                 </ListGroup.Item>
               ))}
             </ListGroup>
           )}
+          
           <Form onSubmit={handleCommentSubmit}>
             <Form.Control
               as="textarea"
@@ -166,46 +186,41 @@ const renderMedia = () => {
               placeholder="Add a comment..."
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              style={{ borderRadius: '0' }} // Rectangular
             />
-            <Button 
-              variant="primary" 
-              type="submit" 
-              className="mt-2"
-            >
+            <Button variant="outline-primary" type="submit" className="mt-2">
               Post Comment
             </Button>
           </Form>
         </div>
 
-        {/* Rating Section (Now Second) */}
-        <div className="rating-section">
-        <div className="stars mb-2">
+        <div className="rating-section mt-3">
+          <div className="stars mb-2">
             {[1, 2, 3, 4, 5].map((star) => (
               <span
                 key={star}
                 onClick={() => setRating(star)}
                 onMouseEnter={() => setHoverRating(star)}
                 onMouseLeave={() => setHoverRating(0)}
-                style={{ 
-                  cursor: 'pointer', 
+                style={{
+                  cursor: 'pointer',
                   color: star <= (hoverRating || rating) ? 'gold' : 'gray',
-                  fontSize: '1.8rem',
-                  marginRight: '5px'
+                  fontSize: '1.5rem'
                 }}
               >
-                ⭐
+                ★
               </span>
             ))}
           </div>
           <Button 
-            variant="outline-primary" 
+            variant="outline-secondary" 
             onClick={handleRatingSubmit}
-            className="mt-2"
+            disabled={!rating}
           >
-            Submit Rating
+            Rate This Video
           </Button>
-          <div className="mt-2">Average: {averageRating.toFixed(1)}</div>
+          <div className="mt-2">
+            Average Rating: {averageRating.toFixed(1)}/5
+          </div>
         </div>
       </Card.Body>
     </Card>

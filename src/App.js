@@ -2,21 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import CreatorView from './pages/CreatorView';
+import DashboardView from './pages/DashboardView';
 import ConsumerView from './pages/ConsumerView';
 import Login from './pages/Login';
 import Register from './pages/Register';
-//import { API_URL } from '../src/config'; // Import from config.js
-
-// import bgImage from './assets/instagram-icon.png';
-
-// const styles = {
-//   backgroundImage: `url(${bgImage})`,
-//   backgroundRepeat: 'repeat',
-//   backgroundSize: '60px',
-//   backgroundColor: '#000',
-//   minHeight: '100vh', // makes sure the background fills the screen
-//   color: '#fff', // optional: makes text readable on black
-// };
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -33,22 +22,6 @@ function App() {
   }, []);
   return (
     <>
-      {/* <div className="icon-float">
-        {Array.from({ length: 20 }).map((_, i) => (
-          <img
-            key={i}
-            src={bgImage}
-            alt="bg-icon"
-            style={{
-              top: `${Math.random() * 100}%`,
-              left: `${Math.random() * 100}%`,
-              width: `${30 + Math.random() * 30}px`,
-              transform: `rotate(${Math.random() * 360}deg)`,
-            }}
-          />
-        ))}
-      </div> */}
-
       <Router>
         <Navbar 
           isAuthenticated={isAuthenticated} 
@@ -71,6 +44,10 @@ function App() {
           <Route 
             path="/creator" 
             element={isAuthenticated && userRole === 'creator' ? <CreatorView/> : <Navigate to="/" />} 
+          />
+           <Route 
+            path="/dashboard" 
+            element={isAuthenticated ? <DashboardView /> : <Navigate to="/login" />} 
           />
         </Routes>
       </Router>

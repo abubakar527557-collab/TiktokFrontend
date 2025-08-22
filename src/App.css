@@ -1,8 +1,8 @@
 body {
-  background-color: white;
+  background-color: #000;
   position: relative;
   overflow-x: hidden; /* Keep horizontal scroll blocked */
-  overflow-y: auto; 
+  overflow-y: auto;  
 }
 
 
@@ -40,12 +40,13 @@ input::file-selector-button {
 
 /* Style for the video card */
 .video-card {
-  max-width: 400px;
-  margin: 0 auto;
-  border-radius: 0; /* Rectangular card */
-  border: 2px solid #333;
-  background: rgba(0, 0, 0, 0.7);
-  color: white;
+ max-width: 400px;   /* Max width of the card */
+  margin: 0 auto;     /* Center the card */
+  display: flex;      /* Use flexbox */
+  flex-direction: column; /* Stack media content vertically */
+  gap: 1rem;          /* Space between content */
+  border-radius: 10px;  /* Rounded corners */
+  box-shadow: 0 4px 8px rgba(255, 255, 255, 0.1);
 }
 /* Container for media content (video or image) */
 .media-container {

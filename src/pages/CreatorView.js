@@ -8,42 +8,32 @@ import { getMedia, uploadMedia } from '../api';
 
 function CreatorView({ apiUrl }) {
   const [mediaList, setMediaList] = useState([]);
-
-  useEffect(() => {
-    const fetchMedia = async () => {
-      try {
-        const response = await getMedia();
-        setMediaList(response.data);
-      } catch (error) {
-        console.error('Error fetching media:', error);
-      }
-    };
-    fetchMedia();
-  }, []);
-
-  // const handleDelete = async (mediaId) => {
-  //   try {
-  //     await axios.delete(`${API_URL}/media/${mediaId}`, {
-  //       headers: {
-  //         Authorization: `Bearer ${localStorage.getItem('token')}`
-  //       }
-  //     });
-  //     // Update state to remove the deleted media
-  //     setMediaList(mediaList.filter(media => media._id !== mediaId));
-  //   } catch (error) {
-  //     console.error('Delete error:', error);
-  //   }
-  // };
-
-  const handleUpload = async (formData) => {
+  
+ useEffect(() => {
+  const fetchMedia = async () => {
     try {
-      const response = await uploadMedia(formData);
-      setMediaList([response.data, ...mediaList]);
+      const response = await getMedia();
+      // Ensure it's always an array
+      const data = Array.isArray(response.data) ? response.data : response.data.media || [];
+      setMediaList(data);
     } catch (error) {
-      console.error('Error uploading media:', error);
-      alert('Upload failed. Please try again.');
+      console.error('Error fetching media:', error);
+      setMediaList([]); // fallback to empty array
     }
   };
+  fetchMedia();
+}, []);
+
+ const handleUpload = async (formData) => {
+  try {
+    const response = await uploadMedia(formData);
+    const newMedia = response.data.media || response.data; 
+    setMediaList([newMedia, ...mediaList]);
+  } catch (error) {
+    console.error('Error uploading media:', error);
+    alert('Upload failed. Please try again.');
+  }
+};
 
   return (
     <div>
