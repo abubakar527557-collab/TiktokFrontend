@@ -12,6 +12,8 @@ const VideoCard = ({ media, onDelete, isCreator }) => {
   const [hoverRating, setHoverRating] = useState(0);
   const videoRef = useRef(null);
 
+    const baseURL = process.env.REACT_APP_API_URL?.replace('/api', '') || '';
+
   // Get file extension for video type
   const getVideoType = (url) => {
     if (!url) return 'mp4';
@@ -80,7 +82,19 @@ if (newComment && newComment.userId) {
   };
 
   // Format media URL properly
-  const formatMediaUrl = (url) => {
+  // const formatMediaUrl = (url) => {
+  //   if (!url) return '';
+  //   if (url.startsWith('http')) return url;
+    
+  //   // Clean the URL path
+  //   const cleanUrl = url
+  //     .replace(/^undefined/, '')
+  //     .replace(/\/+/g, '/')
+  //     .replace(/^\//, '');
+      
+  //   return `http://localhost:5000/${cleanUrl}`;
+  // };
+const formatMediaUrl = (url) => {
     if (!url) return '';
     if (url.startsWith('http')) return url;
     
@@ -90,7 +104,7 @@ if (newComment && newComment.userId) {
       .replace(/\/+/g, '/')
       .replace(/^\//, '');
       
-    return `http://localhost:5000/${cleanUrl}`;
+    return `${baseURL}/${cleanUrl}`;
   };
 
   // Display comment author name
