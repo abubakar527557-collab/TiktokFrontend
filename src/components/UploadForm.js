@@ -44,7 +44,7 @@ function UploadForm({ onUpload }) {
   try {
     const response = await onUpload(formData);
     console.log('Upload response:', response.data); // Debug the response
-    if (response.data && response.data.mediaUrl) {
+    if (response.data && response.mediaUrl) {
       navigate('/'); // Redirect to home on success
     } else {
       throw new Error('No media URL returned');

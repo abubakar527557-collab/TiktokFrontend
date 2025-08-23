@@ -9,25 +9,52 @@ import { getMedia, uploadMedia } from '../api';
 function CreatorView({ apiUrl }) {
   const [mediaList, setMediaList] = useState([]);
   
- useEffect(() => {
+//  useEffect(() => {
+//   const fetchMedia = async () => {
+//     try {
+//       const response = await getMedia();
+//       // Ensure it's always an array
+//       const data = Array.isArray(response.data) ? response.data : response.data.media || [];
+//       setMediaList(data);
+//     } catch (error) {
+//       console.error('Error fetching media:', error);
+//       setMediaList([]); // fallback to empty array
+//     }
+//   };
+//   fetchMedia();
+// }, []);
+
+//  const handleUpload = async (formData) => {
+//   try {
+//     const response = await uploadMedia(formData);
+//     const newMedia = response.data.media || response.data; 
+//     setMediaList([newMedia, ...mediaList]);
+//   } catch (error) {
+//     console.error('Error uploading media:', error);
+//     alert('Upload failed. Please try again.');
+//   }
+// };
+
+useEffect(() => {
   const fetchMedia = async () => {
     try {
       const response = await getMedia();
-      // Ensure it's always an array
-      const data = Array.isArray(response.data) ? response.data : response.data.media || [];
+      // response is already the data
+      const data = Array.isArray(response) ? response : response.media || [];
       setMediaList(data);
     } catch (error) {
       console.error('Error fetching media:', error);
-      setMediaList([]); // fallback to empty array
+      setMediaList([]);
     }
   };
   fetchMedia();
 }, []);
 
- const handleUpload = async (formData) => {
+const handleUpload = async (formData) => {
   try {
     const response = await uploadMedia(formData);
-    const newMedia = response.data.media || response.data; 
+    // response is already just the data
+    const newMedia = response.media || response;
     setMediaList([newMedia, ...mediaList]);
   } catch (error) {
     console.error('Error uploading media:', error);
